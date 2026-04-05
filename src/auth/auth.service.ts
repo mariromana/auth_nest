@@ -1,5 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import {
+	ConflictException,
+	Injectable,
+	InternalServerErrorException
+} from '@nestjs/common'
 import { AuthMethod, User } from '@prisma/client'
+import { Request } from 'express'
 
 import { PrismaService } from '@/prisma/prisma.service'
 import { UserService } from '@/user/user.service'
@@ -13,7 +18,7 @@ export class AuthService {
 		private readonly userService: UserService
 	) {}
 
-	public async register(dto: RegisterDto) {
+	public async register(req: Request, dto: RegisterDto) {
 		const isExists = await this.userService.findByEmail(dto.email)
 
 		if (isExists) {
@@ -31,14 +36,28 @@ export class AuthService {
 			false
 		)
 
-		return this.saveSession(newUser)
+		return this.saveSession(req, newUser)
 	}
 
 	public async login() {}
 
 	public async logout() {}
 
-	private async saveSession(user: User) {
-		console.log('session saved User', user)
+	private async saveSession(req: Request, user: User) {
+		return new Promise((resolve, reject) => {
+			req.session.userId = user.id
+			req.session.save(err => {
+				if (err) {
+					console.error('Session save error:', err)
+					return reject(
+						new InternalServerErrorException(
+							'Failed to save session'
+						)
+					)
+				} else {
+					resolve(user)
+				}
+			})
+		})
 	}
 }
