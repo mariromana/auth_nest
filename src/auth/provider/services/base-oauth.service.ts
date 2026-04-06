@@ -9,7 +9,7 @@ import type { TypeUserInfo } from './types/user-info.types'
 
 @Injectable()
 export class BaseOauthService {
-	private BASE_URL: string
+	private BASE_URL!: string
 
 	public constructor(private readonly options: TypeBaseProviderOptions) {}
 
@@ -32,6 +32,7 @@ export class BaseOauthService {
 		const tokenQuery = new URLSearchParams({
 			client_id,
 			client_secret,
+			code,
 			redirect_uri: this.getRedirectUrl(),
 			grant_type: 'authorization_code'
 		})
@@ -46,15 +47,16 @@ export class BaseOauthService {
 
 		const tokenResponse = await tokenRequest.json()
 
-		if (!tokenResponse.ok) {
+		//!! tokenRequest.ok
+		if (!tokenRequest.ok) {
 			throw new BadRequestException(
-				`Faild to get user info: ${this.options.profile_url}. Check your token and try again`
+				`Failed to get access token from ${this.options.access_url}`
 			)
 		}
 
 		if (!tokenResponse.access_token) {
 			throw new BadRequestException(
-				`Faild to get user info: ${this.options.access_url}. Check your token and try again`
+				`Failed to get access token from  ${this.options.access_url}. Check your token and try again`
 			)
 		}
 
@@ -66,15 +68,15 @@ export class BaseOauthService {
 
 		if (!userRequest.ok) {
 			throw new UnauthorizedException(
-				`Faild to get user info: ${this.options.profile_url}. Check your token and try again`
+				`Failed to get user info: ${this.options.profile_url}. Check your token and try again`
 			)
 		}
 
 		const user = await userRequest.json()
-		const userInfo = await this.extractUserInfo(user)
+		const userData = await this.extractUserInfo(user)
 
 		return {
-			...userInfo,
+			...userData,
 			access_token: tokenResponse.access_token,
 			refresh_token: tokenResponse.refresh_token,
 			expires_at: tokenResponse.expires_at || tokenResponse.expires_in,
