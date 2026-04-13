@@ -19,7 +19,8 @@ export class BaseOauthService {
 			redirect_uri: this.getRedirectUrl(),
 			response_type: 'code',
 			scope: (this.options.scopes ?? []).join(' '),
-			access_type: 'select_account'
+			access_type: 'offline', // online или offline
+			prompt: 'select_account' // select_account, consent, none
 		})
 
 		return `${this.options.authorize_url}?${query.toString()}`
@@ -90,8 +91,9 @@ export class BaseOauthService {
 			provider: this.options.name
 		}
 	}
+
 	getRedirectUrl() {
-		return `${this.BASE_URL}/auth/oauth/callback/${this.options.name}/`
+		return `${this.BASE_URL}/auth/oauth/callback/${this.options.name}`
 	}
 	set baseUrl(value: string) {
 		this.BASE_URL = value
